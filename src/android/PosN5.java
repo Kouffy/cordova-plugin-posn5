@@ -3,20 +3,22 @@ package com.example.plugin;
 import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.widget.Toast;
+import android.os.RemoteException;
+import android.util.Log;
+
+import com.example.plugin.util.Order;
 import com.google.gson.*;
 import com.nexgo.oaf.apiv3.APIProxy;
 import com.nexgo.oaf.apiv3.DeviceEngine;
 import com.nexgo.oaf.apiv3.SdkResult;
 import com.nexgo.oaf.apiv3.device.printer.AlignEnum;
 import com.nexgo.oaf.apiv3.device.printer.BarcodeFormatEnum;
-import com.nexgo.oaf.apiv3.device.printer.DotMatrixFontEnum;
-import com.nexgo.oaf.apiv3.device.printer.FontEntity;
 import com.nexgo.oaf.apiv3.device.printer.OnPrintListener;
 import com.nexgo.oaf.apiv3.device.printer.Printer;
 import com.nexgo.oaf.apiv3.device.scanner.OnScannerListener;
 import com.nexgo.oaf.apiv3.device.scanner.Scanner;
 import com.nexgo.oaf.apiv3.device.scanner.ScannerCfgEntity;
+import com.start.smartpos.aidl.device.printer.PrinterFormat;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaArgs;
@@ -25,18 +27,27 @@ import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CordovaWebView;
 import org.json.JSONException;
 
-import io.cordova.hellocordova.R;
+import java.io.IOException;
 
 public class PosN5 extends CordovaPlugin {
     private Activity activity;
     private DeviceEngine deviceEngine;
+    //打印
+    private Printer printer = deviceEngine.getPrinter();
+    ;
+    //打印相关
+    private int FONT_SIZE_SMALL = 20;
+    private int FONT_SIZE_NORMAL = 24;
+    private AlignEnum FONT_ALIGN = AlignEnum.LEFT;
+    private int FONT_SIZE_BIG = 24;
+
     private CallbackContext callbackContext = null;//返回的回调
 
     @Override
     public void initialize(CordovaInterface cordova, CordovaWebView webView) {
         super.initialize(cordova, webView);
         activity = cordova.getActivity();
-        deviceEngine =  APIProxy.getDeviceEngine();
+        deviceEngine = APIProxy.getDeviceEngine();
     }
 
     @Override
@@ -49,7 +60,7 @@ public class PosN5 extends CordovaPlugin {
         } else if ("scanner".equals(action)) {
             scanner();
             return true;
-        }else if ("printer".equals(action)) {
+        } else if ("printer".equals(action)) {
             printer(param);
             return true;
         }
@@ -59,62 +70,211 @@ public class PosN5 extends CordovaPlugin {
     //调用打印
     private void printer(String str) {
         Gson gson = new Gson();
-        Order data=gson.fromJson(str,Order.class);
-
-        //打印相关
-        int FONT_SIZE_SMALL = 20;
-        int FONT_SIZE_NORMAL = 24;
-        int FONT_SIZE_BIG = 24;
-
-        Bitmap bitmap;
-        Printer printer=deviceEngine.getPrinter();;
-        printer.initPrinter();
-        printer.setLetterSpacing(5);
-        //bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.logo);
-       // printer.appendImage(bitmap, AlignEnum.CENTER);
-        printer.appendPrnStr("商户名称:应用测试", FONT_SIZE_NORMAL, AlignEnum.LEFT, false);
-        printer.appendPrnStr("商户号:123456789012345", FONT_SIZE_NORMAL, AlignEnum.LEFT, false);
-        printer.appendPrnStr("终端号:12345678", "操作员号:01", FONT_SIZE_NORMAL, false);
-        printer.appendPrnStr("发卡行:工商银行", FONT_SIZE_NORMAL, AlignEnum.LEFT, false);
-        printer.appendPrnStr("收单行:银联商务", FONT_SIZE_NORMAL, AlignEnum.LEFT, false);
-        printer.appendPrnStr("有效期:26/06", FONT_SIZE_NORMAL, AlignEnum.LEFT, false);
-        printer.appendPrnStr("卡号:", FONT_SIZE_NORMAL, AlignEnum.LEFT, false);
-        printer.appendPrnStr("621226*********1197/C", FONT_SIZE_BIG, AlignEnum.LEFT, false);
-        printer.appendPrnStr("交易类型:", FONT_SIZE_NORMAL, AlignEnum.LEFT, false);
-        printer.appendPrnStr("消费撤销", FONT_SIZE_BIG, AlignEnum.LEFT, false);
-        printer.appendPrnStr("批次号:000938", FONT_SIZE_NORMAL, AlignEnum.LEFT, false);
-        printer.appendPrnStr("凭证号:000146", "授权码:012345", FONT_SIZE_NORMAL, false);
-        printer.appendPrnStr("参考号:150303296481", FONT_SIZE_NORMAL, AlignEnum.LEFT, false);
-        printer.appendPrnStr("交易日期:2016/09/21 15:03:03", FONT_SIZE_NORMAL, AlignEnum.LEFT, false);
-        printer.appendPrnStr("金额:", FONT_SIZE_NORMAL, AlignEnum.LEFT, false);
-        printer.appendPrnStr("    RMB:123456789.00", FONT_SIZE_BIG, AlignEnum.LEFT, false);
-        printer.appendPrnStr("备注:", FONT_SIZE_NORMAL, AlignEnum.LEFT, false);
-        printer.appendPrnStr("原凭证号:000145", FONT_SIZE_NORMAL, AlignEnum.LEFT, false);
-        printer.appendPrnStr("附加信息(Host):", FONT_SIZE_NORMAL, AlignEnum.LEFT, false);
-        printer.appendBarcode("1234567890", 50, 0, 2, BarcodeFormatEnum.CODE_128, AlignEnum.CENTER);
-        printer.appendQRcode("测试二维码测试二维码测试二维码测试二维码测试二维码测试二维码测试二维码测试二维码测试二维码", 200, AlignEnum.CENTER);
-        printer.appendPrnStr("---------------------------", FONT_SIZE_NORMAL, AlignEnum.LEFT, false);
-        printer.appendPrnStr("持卡人签名:", FONT_SIZE_NORMAL, AlignEnum.LEFT, false);
-        printer.appendPrnStr("\n", FONT_SIZE_NORMAL, AlignEnum.LEFT, false);
-        printer.appendPrnStr("\n", FONT_SIZE_NORMAL, AlignEnum.LEFT, false);
-        printer.appendPrnStr("\n", FONT_SIZE_NORMAL, AlignEnum.LEFT, false);
-        printer.appendPrnStr("---------------------------", FONT_SIZE_NORMAL, AlignEnum.LEFT, false);
-        printer.appendPrnStr("本人确认以上交易,同意将其计入本卡账户", FONT_SIZE_SMALL, AlignEnum.LEFT, false);
-        printer.appendPrnStr("I ACKNOWLEDGE SATISFACTORY RECEIPT OF RELATIVE GOODS/SERVICES", FONT_SIZE_SMALL, AlignEnum.LEFT, false);
-        printer.appendPrnStr("---------------------------", FONT_SIZE_NORMAL, AlignEnum.LEFT, false);
-        printer.appendPrnStr("商户存根", FONT_SIZE_NORMAL, AlignEnum.RIGHT, false);
-        printer.startPrint(true, new OnPrintListener() {
-            @Override
-            public void onPrintResult(final int retCode) {
-                activity.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        callbackContext.success(retCode);
-                        //Toast.makeText(activity, retCode + "", Toast.LENGTH_SHORT).show();
-                    }
-                });
+        Order data = new Order();
+        try {
+            data = gson.fromJson(str, Order.class);
+            BitmapFactory.Options opts = new BitmapFactory.Options();
+            opts.inPreferredConfig = Bitmap.Config.ARGB_4444;
+            Bitmap bitmap = null;
+            try {
+                bitmap = BitmapFactory.decodeStream(activity.getAssets().open("print.bmp"), null, opts);
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-        });
+            printer.initPrinter();
+            printer.setLetterSpacing(5);
+            printer.appendImage(bitmap, AlignEnum.CENTER);
+
+            //基本信息
+            printText("订单号:" + data.getOrderNo(), data.getOrderNo());
+            if ("0".equals(data.getType())) {//采购
+                if ("付款".equals(data.getOrderName())) {
+                    printText("收款单位:" + data.getSupplierName(), data.getSupplierName());
+                } else {
+                    printText("供应商:" + data.getSupplierName(), data.getSupplierName());
+                }
+                printText("日期:" + data.getDate(), data.getDate());
+                if (data.getPlaceDate() != null) {
+                    printText("订单交期:" + data.getPlaceDate(), data.getPlaceDate());
+                }
+                if ("采购".equals(data.getOrderName())) {
+                    printText("预付金额:" + data.getAdvanceMoney(), data.getAdvanceMoney());
+                    printText("采购总数:" + data.getAmount(), data.getAmount());
+                    printText("采购总额:" + data.getMoney(), data.getMoney());
+                } else if ("收货".equals(data.getOrderName())) {
+                    printText("付款金额:" + data.getAdvanceMoney(), data.getAdvanceMoney());
+                } else if ("退货".equals(data.getOrderName())) {
+                    if (data.getAccountName() != null) {
+                        printText("结算账户:" + data.getAccountName(), data.getAccountName());
+                        printText("本次退款:" + data.getAdvanceMoney(), data.getAdvanceMoney());
+                    }
+                } else if ("付款".equals(data.getOrderName())) {
+                    printText("支出类型:" + data.getTypeName(), data.getTypeName());
+                }
+            }
+            if ("1".equals(data.getType())) {//销售
+                printText(data.getOrderName() + "客户:" + data.getCustomerName(), data.getCustomerName());
+                printText(data.getOrderName() + "日期:" + data.getDate(), data.getDate());
+                if (data.getPlaceDate() != null) {
+                    printText("订单交期:" + data.getPlaceDate(), data.getPlaceDate());
+                }
+                if ("出货".equals(data.getOrderName())) {
+                    if (data.getAccountName() != null) {
+                        printText("收款账户:" + data.getAccountName(), data.getAccountName());
+                    }
+                    printText("出货总量:" + data.getAmount(), data.getAmount());
+                    printText("出货总额:" + data.getMoney(), data.getMoney());
+                } else if ("收款".equals(data.getOrderName())) {
+                    printText("收款类型:" + data.getTypeName(), data.getTypeName());
+                } else if ("客户退货".equals(data.getOrderName())) {
+                    printText("退货总量:" + data.getAmount(), data.getAmount());
+                    printText("退货总额:" + data.getMoney(), data.getMoney());
+                    if (data.getAccountName() != null) {
+                        printText("退款账户:" + data.getAccountName(), data.getAccountName());
+                        printText("本次退款:" + data.getAdvanceMoney(), data.getAdvanceMoney());
+                    }
+                } else if ("销售".equals(data.getOrderName())) {
+                    printText("定金金额:" + data.getAdvanceMoney(), data.getAdvanceMoney());
+                    printText("销售数量:" + data.getAmount(), data.getAmount());
+                    printText("销售金额:" + data.getMoney(), data.getMoney());
+                }
+            }
+            if ("2".equals(data.getType()) && "零售".equals(data.getOrderName())) {//零售
+                printText(data.getOrderName() + "日期:" + data.getDate(), data.getDate());
+                if (data.getMemberCard_MemberName() != null) {
+                    printText("会员信息:" + data.getMemberCard_MemberName(), data.getMemberCard_MemberName());
+                }
+                printText("销售金额:" + data.getMoney(), data.getMoney());
+                printText("促销金额:" + data.getPerformanceMoney(), data.getPerformanceMoney());
+                printText("应收金额 :" + data.getMoney(), data.getMoney());
+                printText("积分抵扣:" + data.getAccountScoreMoney(), data.getAccountScoreMoney());
+                printText("代金券:" + data.getAccountTicketMoney(), data.getAccountTicketMoney());
+                printText("实收金额:" + data.getActualMoney(), data.getActualMoney());
+            }
+            if ("3".equals(data.getType())) {//库存
+                printText("日期:" + data.getDate(), data.getDate());
+                if ("损益".equals(data.getOrderName())) {
+                    printText("原始单号:" + data.getSourceOrderNo(), data.getSourceOrderNo());
+                    printText("益损总数:" + data.getAmount(), data.getAmount());
+                    printText("益损总额:" + data.getMoney(), data.getMoney());
+                } else if ("盘点".equals(data.getOrderName())) {
+                    printText("盘点级别:" + data.getCheckClass(), data.getCheckClass());
+                } else if ("调拨".equals(data.getOrderName())) {
+                    printText("调出仓库:" + data.getFromWarehouseName(), data.getFromWarehouseName());
+                    printText("调入仓库:" + data.getToWarehouseName(), data.getToWarehouseName());
+                }
+            }
+            printText("经手人:" + data.getSponsorName(), data.getSponsorName());
+
+            //付款-收款单信息
+            if (data.getDetail() != null && data.getDetail().size() > 0) {
+                printText(" ", "");
+                printText("-----------单据信息-----------", "");
+                for (int i = 0; i < data.getDetail().size(); i++) {
+                    com.example.plugin.util.Order.Detail detail = data.getDetail().get(i);
+                    printText(data.getOrderName() + "单号:" + detail.getNo(), detail.getNo());
+                    printText("日期:" + detail.getDate(), detail.getDate());
+                    printText("单据类型:" + detail.getTypeName(), detail.getTypeName());
+                    if (detail.getSumMoney() != null && detail.getMoney() != null) {
+                        printText(data.getOrderName() + "金额:" + detail.getSumMoney() + "  本次" + data.getOrderName() + "额" + detail.getMoney(), "");
+                    }
+                    printText("------------------------------", "");
+                }
+            }
+
+            //付款-收款账户信息
+            if (data.getAccount() != null && data.getAccount().size() > 0) {
+                printText(" ", "");
+                printText("-----------账户信息-----------", "");
+                for (int i = 0; i < data.getAccount().size(); i++) {
+                    com.example.plugin.util.Order.Account account = data.getAccount().get(i);
+                    printText("账户名称:" + account.getAccountName(), account.getAccountName());
+                    printText("账户代码:" + account.getAccountCode(), account.getAccountCode());
+                    if (account.getFeeMoney() != null) {
+                        printText(data.getOrderName() + "金额:" + account.getMoney() + "  手续费" + account.getFeeMoney(), account.getMoney());
+                    } else {
+                        printText(data.getOrderName() + "金额:" + account.getMoney(), account.getMoney());
+                    }
+                    if (account.getAccountingMoney() != null && account.getDescription() != null) {
+                        printText("支出金额:" + account.getAccountingMoney() + "  备注" + account.getDescription(), "");
+                    }
+                    if ("付款".equals(data.getOrderName())) {
+                        printText("支出金额:" + account.getAccountingMoney(), account.getAccountingMoney());
+                    } else {
+                        printText("收款金额:" + account.getAccountingMoney(), account.getAccountingMoney());
+                    }
+
+                    printText("------------------------------", "");
+                }
+            }
+
+            //货品信息
+            if (data.getGoods() != null && data.getGoods().size() > 0) {
+                printText(" ", "");
+                printText("-----------货品信息-----------", "");
+                for (int i = 0; i < data.getGoods().size(); i++) {
+                    com.example.plugin.util.Order.Goods good = data.getGoods().get(i);
+                    printText("名称:" + good.getKindName(), good.getKindName());
+                    if (good.getColorName() != null && good.getSizeText() != null) {
+                        printText("颜色:" + good.getColorName() + "  尺码:" + good.getSizeText(), "");
+                    }
+                    if ("0".equals(data.getType())) {
+                        if (good.getZmoney() != null && good.getAmount() != null) {
+                            printText(data.getOrderName() + "价:" + good.getZmoney() + "  数量:" + good.getAmount(), "");
+                        }
+                    } else if ("1".equals(data.getType()) || "2".equals(data.getType())) {
+                        if (good.getZmoney() != null && good.getAmount() != null) {
+                            printText("批发价:" + good.getZmoney() + "  数量:" + good.getAmount(), "");
+                        }
+                    } else if ("3".equals(data.getType()) && "损益".equals(data.getOrderName())) {
+                        if (good.getZmoney() != null && good.getAmount() != null) {
+                            printText("成本价:" + good.getZmoney() + "  数量:" + good.getAmount(), "");
+                        }
+                    }
+                    if (good.getTaxRate() != null && good.getTaxMoney() != null) {
+                        printText("税率:" + good.getTaxRate() + "  税额:" + good.getTaxMoney(), "");
+                    }
+                    if ("3".equals(data.getType())) {
+                        if ("损益".equals(data.getOrderName())) {
+                            if (good.getZmoney() != null && good.getInventory() != null) {
+                                printText("总额:" + good.getZmoney() + "   库存:" + good.getInventory(), "");
+                            }
+                        } else if ("盘点".equals(data.getOrderName())) {
+                            printText("账面数量:" + good.getAmount(), good.getAmount());
+                            printText("盘点数量:" + good.getCheckAmount(), good.getCheckAmount());
+                            printText("盈亏数量:" + good.getProfitLossAmount(), good.getProfitLossAmount());
+                        } else if ("调拨".equals(data.getOrderName())) {
+                            printText("调拨数量:" + good.getAmount(), good.getAmount());
+                        }
+                    } else if (good.getDiscountRate() != null && good.getZmoney() != null) {
+                        printText("折扣:" + good.getDiscountRate() + "  总金额:" + good.getZmoney(), "");
+                    }
+                    printText("------------------------------", "");
+                }
+            }
+            printText("打印时间:" + data.getPrintTime(), data.getPrintTime());
+            printer.startPrint(true, new OnPrintListener() {
+                @Override
+                public void onPrintResult(final int retCode) {
+                    activity.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            callbackContext.success(retCode);
+                        }
+                    });
+                }
+            });
+        } catch (Exception e) {
+            Log.i("rain", e.getMessage());
+        }
+    }
+
+    //打印相关
+    private boolean printText(String text, String old) throws RemoteException {
+        if (old != null && !"0".equals(old) && !"0.00".equals(old)) {
+            printer.appendPrnStr("商户名称:应用测试", FONT_SIZE_NORMAL, FONT_ALIGN, false);
+        }
+        return false;
     }
 
     //调用扫码
@@ -129,7 +289,9 @@ public class PosN5 extends CordovaPlugin {
                 if (retCode == SdkResult.Success) {
                     int result = scanner.startScan(60, new OnScannerListener() {
                         @Override
-                        public void onInitResult(int retCode) {}
+                        public void onInitResult(int retCode) {
+                        }
+
                         @Override
                         public void onScannerResult(int retCode, final String data) {
                             switch (retCode) {
@@ -183,7 +345,8 @@ public class PosN5 extends CordovaPlugin {
             }
 
             @Override
-            public void onScannerResult(int retCode, String data) {}
+            public void onScannerResult(int retCode, String data) {
+            }
         });
     }
 

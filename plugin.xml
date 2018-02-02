@@ -19,12 +19,12 @@
 
     <config-file target="res/xml/config.xml" parent="/*">
       <feature name="PosN5">
-        <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
         <param name="android-package" value="com.example.plugin.PosN5"/>
       </feature>
     </config-file>
     
     <config-file parent="/*" target="AndroidManifest.xml">
+        <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
         <uses-sdk android:minSdkVersion="19" android:targetSdkVersion="25" />
     </config-file>
     
@@ -34,7 +34,7 @@
     <source-file src="src/android/libs/armeabi/libnexgo_sdkemvjni.so" target-dir="libs/armeabi" />
     <source-file src="src/android/libs/gson-2.6.1.jar" target-dir="libs" />
     <source-file src="src/android/PosN5.java" target-dir="src/com/example/plugin/"/>
-    <source-file src="src/android/Order.java" target-dir="src/com/example/plugin/"/>
+    <source-file src="src/android/util/Order.java" target-dir="src/com/example/plugin/util/"/>
   </platform>
 
 </plugin>

@@ -1,6 +1,6 @@
-# Cordova SmartPos Plugin
+# Cordova PosN5 Plugin
 
-这是一个简单的安卓版pos机s1000 SDK调用的插件.
+这是一个简单的新国都pos机N5 SDK调用的插件.
 
 它包含了基本的调用功能，包括测试，打印走纸，安全键盘等等功能。
 
@@ -13,7 +13,7 @@
 ### 安装插件
 
     $ cd demo
-    $ cordova plugin add https://github.com/Xonlystar/cordova-plugin-smartpos.git
+    $ cordova plugin add https://github.com/Xonlystar/cordova-plugin-posn5.git
     
 
 ### 调用插件
